@@ -1,10 +1,10 @@
 from get_ran import *
-
+# 容量类问题
 # mode0 正常
-# mode1 弱覆盖
-# mode2 越区覆盖
-# mode3 重叠覆盖
-# mode4 覆盖不均衡
+# mode1
+# mode2
+# mode3
+# mode4
 
 n = int(1e4)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
