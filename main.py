@@ -1,5 +1,5 @@
 from get_ran import *
-
+# 覆盖类问题
 # mode0 正常
 # mode1 弱覆盖
 # mode2 越区覆盖
