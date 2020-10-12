@@ -2,6 +2,7 @@ from random import randint, sample, choice
 from numpy import random
 from get_cpn import *
 from get_ran import *
+import pandas as pd
 
 # modes = ['a' for i in range(18)]
 # for i, x in enumerate(modes):
@@ -17,3 +18,6 @@ from get_ran import *
 # print(getPlmnList(s))
 # print(getSnaList(s, 8))
 # print(getRelatedCellDuList())
+# feature = pd.read_csv('data.csv', header=0, usecols=range(10))
+# label = pd.read_csv('data.csv', header=0, usecols=[10])
+# print(feature[:37], label[:37])

@@ -80,16 +80,19 @@ def getTransRate(s: str):
 
 
 def Mean(res: int, val: int, count: int, cpe_size: int):
-    if count == (cpe_size-1):
-        return (res+val)/cpe_size
+    if count == (cpe_size - 1):
+        return (res + val) / cpe_size
     else:
-        return res+val
+        return res + val
 
 
-def get_terminal(i: int, j: int, k: int, l: int, terminalsize: int, x: float, y: float):
+def get_terminal(i: int, j: int, k: int, l: int, mode: int, terminalsize: int, x: float, y: float):
     for e in range(terminalsize):
         t = Terminal()
-        t.Longitude, t.Latitude = getjw(jws, x, y, 0.001, 0.002, 0)
+        if mode == 2:  # 切换类
+            t.Longitude, t.Latitude = getjw(jws, x, y, 0.0015, 0.002, 0)
+        else:
+            t.Longitude, t.Latitude = getjw(jws, x, y, 0.001, 0.002, 0)
         if l >= 0:  # CPE接入
             t.TerminalId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k) + "/Cpe" + getId(l) + "/Terminal" + \
                            getId(e)
@@ -102,7 +105,7 @@ def get_terminal(i: int, j: int, k: int, l: int, terminalsize: int, x: float, y:
         terminals.append(t)
 
 
-def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, mode: int):
+def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, bw: int, mode: int):
     cpe_size = randint(3, 5)
     TransRatePeak_mean, RSRP_mean, RSRQ_mean = 0, 0, 0
     for e in range(cpe_size):
@@ -113,40 +116,41 @@ def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, mode: i
         cpe.SupportedType = getSupportedType()
         cpe.Longitude, cpe.Latitude = getjw(jws, x, y, 0.001, 0.003, 0.1)
         lamuda = (getDistance(x, y, cpe.Longitude, cpe.Latitude) / 0.28) * (240.0 / MaxTxPower)
-        cpe.TransRatePeak = round(getTransRate(cpe.SupportedType) * (1 + 0.2 * (1 - lamuda)))
-        cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
-        if mode == 0 or mode == 4:
-            cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        elif mode == 1:
-            cpe.RSRP = round(normal(-105, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        else:
+        if mode == 1:  # 覆盖质量类
             cpe.RSRP = round(normal(-85, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        cpe.RSRQ = round(-11.25 * (1 + 0.4 * (lamuda - 1)))
+            cpe.RSRQ = round(-10 * (1 + 0.4 * (lamuda - 1)))
+        elif mode == 2:  # 切换类
+            cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda - 1)))
+            cpe.RSRQ = round(-15 * (1 + 0.4 * (lamuda - 1)))
+        else:
+            cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda - 1)))
+            cpe.RSRQ = round(-10 * (1 + 0.4 * (lamuda - 1)))
+        cpe.TransRatePeak = round(normal(500, 20) * (1 + 0.2 * (1 - lamuda)) * (bw / 40))
+        cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
         TransRatePeak_mean = Mean(TransRatePeak_mean, cpe.TransRatePeak, e, cpe_size)
         RSRP_mean = Mean(RSRP_mean, cpe.RSRP, e, cpe_size)
         RSRQ_mean = Mean(RSRQ_mean, cpe.RSRQ, e, cpe_size)
-        get_terminal(i, j, k, e, randint(2, 3), cpe.Longitude, cpe.Latitude)
+        get_terminal(i, j, k, e, mode, randint(2, 3), cpe.Longitude, cpe.Latitude)
         cpe.terminals = deepcopy(terminals)
         terminals.clear()
         cpes.append(cpe)
     return TransRatePeak_mean, RSRP_mean, RSRQ_mean
 
 
-def get_cpn(i: int, j: int, k: int, x: float, y: float, cpe_te_size: int, MaxTxPower: int, mode: int):
+def get_cpn(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, bw: int, mode: int):
     c = CpnSubNetwork()
     c.CpnSNId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k)
     c.CpnSNName = "Cpn-" + ''.join(sample(ascii_letters + digits, 3))
-    c.TransRate_mean, c.RSRP_mean, c.RSRQ_mean = get_cpe(i, j, k, x, y, MaxTxPower, mode)
+    c.TransRate_mean, c.RSRP_mean, c.RSRQ_mean = get_cpe(i, j, k, x, y, MaxTxPower, bw, mode)
     c.cpes = deepcopy(cpes)
     cpes.clear()
+    cpe_te_size = 0
     for t in c.cpes:
         cpe_te_size += len(t.terminals)
-    if mode == 1:  # 弱覆盖
-        get_terminal(i, j, k, -1, randint(1, 5), x, y)
-    elif mode == 2 or mode == 3:  # 越区覆盖、重叠覆盖
-        get_terminal(i, j, k, -1, randint(10, 15), x, y)
+    if mode == 1:  # 覆盖质量类
+        get_terminal(i, j, k, -1, mode, randint(10, 15), x, y)
     else:
-        get_terminal(i, j, k, -1, randint(5, 10), x, y)
+        get_terminal(i, j, k, -1, mode, randint(5, 10), x, y)
     c.terminals = deepcopy(terminals)
     terminals.clear()
     if len(cpns) == 18:
@@ -216,4 +220,3 @@ def save_cpn_performance(csvwriter):
 #         if (count % 3 == 0) { dunum++; }
 #     }
 # }
-
