@@ -344,7 +344,7 @@ def get_antenna(i: int, j: int, f: bool, antennasize: int):
         antennas.append(a)
 
 
-def get_rru_configuration(rrusize: int, mode: int):
+def get_rru_configuration(rrusize: int):
     antennasize = 3
     for j in range(len(gnbs)):
         for k in range(rrusize):
@@ -387,7 +387,7 @@ def Get_Data(i: int, mode: int = 0):
     jws.clear()
     get_cu(i, cusize)
     ran.cus = deepcopy(cus)
-    get_rru_configuration(rrusize, mode)
+    get_rru_configuration(rrusize)
     get_nrcell_performance()
     get_rru_performance(rrusize)
     ran.rrus = deepcopy(rrus)
