@@ -10,7 +10,7 @@ with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):
 		# mode = (i/n)*4
 		mode = randint(0, 3)
-		Get_Data(i, int(mode))
+		Get_Data(i, mode)
 		# filename1 = "Config_" + str(modes[i])
 		# Save_Config(filename1)
 		# filename2 = "Perform_" + str(modes[i])

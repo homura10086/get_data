@@ -140,9 +140,12 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode_temp: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
-    '''Here ! ! !'''
-    rand_indexs = sample(range(6), randint(0, 6))
-    '''here'''
+    if mode_temp != 0:
+        '''Here ! ! !'''
+        rand_indexs = sample(range(6), randint(0, 6))
+        '''here'''
+    else:
+        rand_indexs = ()
     for k in range(nrcellsize):
         n = NrCell()
         n.NrCellId = "GNB" + getId(i) + "/NrCell" + getId(k)
