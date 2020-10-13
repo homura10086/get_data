@@ -140,12 +140,13 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode_temp: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
+    mode = mode_temp
+    '''Here ! ! !'''
     if mode_temp != 0:
-        '''Here ! ! !'''
-        rand_indexs = sample(range(6), randint(0, 6))
-        '''here'''
+        rand_indexs = sample(range(6), randint(1, 6))
     else:
         rand_indexs = ()
+    '''here'''
     for k in range(nrcellsize):
         n = NrCell()
         n.NrCellId = "GNB" + getId(i) + "/NrCell" + getId(k)
@@ -154,8 +155,11 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode_temp: int):
         n.S_NSSAIList = getSnaList(s, randint(1, 8))
         # n.NrTAC = to_string(getRandom(0, 65535))
         '''Here! ! !'''
-        if k in rand_indexs and (i != 0 or mode_temp != 2):  # 每个Ran的第一个gnb无mode2(切换）问题
-            mode = mode_temp
+        if mode_temp != 0:
+            if k not in rand_indexs or (i == 0 and mode_temp == 2):  # 每个Ran的第一个gnb有切换类问题（mode=2)时
+                mode = 0
+            else:
+                mode = mode_temp
         else:
             mode = 0
         '''here'''
@@ -185,18 +189,16 @@ def get_nrcell_performance():
     for i, x in enumerate(ran.gnbs):
         for j, y in enumerate(x.nrcells):
             te_size = cpe_te_sizes[k] + len(cpns[k].terminals) + len(cpns[k].cpes)
-            y.ConnMax = te_size
+            y.ConnMax = te_size * uniform(0.95, 1)
             y.ConnMean = round(y.ConnMax / normal(2, 0.05))
             mode = modes[k]
             if mode == 2:  # 切换类
                 rand_index = randint(0, 5)
-                if modes[(i - 1) * 6 + rand_index] == 2:  # 所选小区本来就是切换类问题小区
-                    pass
-                else:
+                if modes[(i - 1) * 6 + rand_index] != 2:  # 所选小区非切换类问题小区
                     modes[(i - 1) * 6 + rand_index] = 2
                     ran.gnbs[i - 1].nrcells[rand_index].AttOutExecInterXn = \
-                        round(normal(21, 1) * ran.gnbs[i - 1].nrcells[rand_index].ConnMean)
-                y.AttOutExecInterXn = round(normal(21, 1) * y.ConnMean)
+                        round(normal(30, 1) * ran.gnbs[i - 1].nrcells[rand_index].ConnMean)
+                y.AttOutExecInterXn = round(normal(30, 1) * y.ConnMean)
             else:
                 y.AttOutExecInterXn = round(normal(15, 1) * y.ConnMean)
             y.UpOctDL = shannon(gnbs[i].nrcells[j].BsChannelBwDL,

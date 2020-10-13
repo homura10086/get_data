@@ -1,11 +1,10 @@
 from abc import ABC
-import numpy as np
-import pandas as pd
 import torch
+import pandas as pd
 import torch.nn as nn
 import torch.utils.data as Data
 from torch.nn import init
-from tool import minmaxscaler, train_ch5
+from tool import *
 
 torch.manual_seed(1)  # reproducible
 torch.cuda.manual_seed_all(1)  # 为所有GPU设置随机种子
@@ -18,7 +17,7 @@ num_sample = (18 // num_cell) * num_RAN
 num_feature = 10
 rate_test = 0.2
 batch_size = 1024
-lr = 0.001
+lr = 0.01
 num_epochs = 50
 device = 'cuda'
 
@@ -56,14 +55,14 @@ train_iter = Data.DataLoader(
     dataset=train_dataset,  # torch TensorDataset format
     batch_size=batch_size,  # mini batch size
     shuffle=True,  # 要不要打乱数据 (打乱比较好)
-    num_workers=8,  # 多线程来读数据
+    num_workers=0,  # 多线程来读数据
     pin_memory=True
 )
 test_iter = Data.DataLoader(
     dataset=test_dataset,  # torch TensorDataset format
     batch_size=batch_size,  # mini batch size
     shuffle=True,  # 要不要打乱数据 (打乱比较好)
-    num_workers=8,  # 多线程来读数据
+    num_workers=0,  # 多线程来读数据
     pin_memory=True
 )
 
@@ -80,30 +79,30 @@ class CNN(nn.Module, ABC):
             nn.BatchNorm2d(3),
             nn.Conv2d(in_channels=3,  # input height
                       out_channels=6,  # n_filters
-                      kernel_size=3,  # filter size
+                      kernel_size=1,  # filter size
                       stride=1,  # filter movement/step
                       padding=0,  # if want same width and length of this image after con2d, padding=(kernel_size-1)/2
                       # if stride=1
-                      ),  # output shape (6, 4, 8)
+                      ),  # output shape (6, 6, 10)
             # nn.Dropout(0.5),
             nn.BatchNorm2d(6),
             nn.ReLU(),  # activation
-            nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (6, 2, 4)
+            # nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (6, 3, 5)
         )
-        self.conv2 = nn.Sequential(  # input shape (6, 2, 4)
+        self.conv2 = nn.Sequential(  # input shape (6, 6, 10)
             nn.Conv2d(in_channels=6,
                       out_channels=12,
                       kernel_size=1,
                       stride=1,
-                      padding=0),  # output shape (12, 2, 4)
+                      padding=0),  # output shape (12, 6, 10)
             # nn.Dropout(0.5),
             nn.BatchNorm2d(12),
             nn.ReLU(),  # activation
-            nn.MaxPool2d(kernel_size=2),  # output shape (12, 1, 2)
+            nn.MaxPool2d(kernel_size=2),  # output shape (12, 3, 5)
         )
         self.out = nn.Sequential(
-            nn.Linear(12 * 1 * 2, 4),  # fully connected layer, output 4 classes
-            # nn.Softmax(dim=0),
+            nn.Linear(12 * 3 * 5, 4),  # fully connected layer, output 4 classes
+            # nn.Softmax(dim=1),
         )
         # _set_init(self.out)  # initialization
 
@@ -115,12 +114,28 @@ class CNN(nn.Module, ABC):
         return output
 
 
+def index_generate(num):
+    data_acc = int(0)
+    index = torch.zeros(batch_size).view(-1, 1).to(device)
+    for i in range(batch_size):
+        index[i][0] = num
+    index = index.long()
+    return index
+
+
 if __name__ == '__main__':
-    cnn = CNN()
-    # print(cnn)  # net architecture
-    optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)  # optimize all cnn parameters
-    ''''''
-    # train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
-    ''''''
-    # torch.save(cnn, 'cnn.pkl')  # save entire net
-    # torch.save(cnn.state_dict(), 'cnn_params.pkl')  # save only the parameters
+    net = CNN()
+    # print(net)  # net architecture
+    net = net.to(device)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # optimize all cnn parameters
+    train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs)
+    # torch.save(net, 'cnn.pkl')  # save entire net
+    torch.save(net.state_dict(), 'cnn_params.pkl')  # save only the parameters
+    # net.load_state_dict(torch.load('./cnn_params.pkl'))
+    # data_iter = Data.DataLoader(
+    #     dataset=dataset,  # torch TensorDataset format
+    #     batch_size=batch_size,  # mini batch size
+    #     shuffle=True,  # 要不要打乱数据 (打乱比较好)
+    #     num_workers=0,  # 多线程来读数据
+    #     pin_memory=True
+    # )

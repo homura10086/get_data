@@ -89,14 +89,15 @@ def Mean(res: int, val: int, count: int, cpe_size: int):
 def get_terminal(i: int, j: int, k: int, l: int, mode: int, terminalsize: int, x: float, y: float):
     for e in range(terminalsize):
         t = Terminal()
-        if mode == 2:  # 切换类
-            t.Longitude, t.Latitude = getjw(jws, x, y, 0.0015, 0.002, 0)
-        else:
-            t.Longitude, t.Latitude = getjw(jws, x, y, 0.001, 0.002, 0)
         if l >= 0:  # CPE接入
+            t.Longitude, t.Latitude = getjw(jws, x, y, 0.001, 0.002, 0)
             t.TerminalId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k) + "/Cpe" + getId(l) + "/Terminal" + \
                            getId(e)
         else:  # 直接接入
+            if mode == 2:  # 切换类
+                t.Longitude, t.Latitude = getjw(jws, x, y, 0.0015, 0.002, 0)
+            else:
+                t.Longitude, t.Latitude = getjw(jws, x, y, 0.001, 0.002, 0)
             t.TerminalId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k) + "/Terminal" + getId(e)
         # t.TerminalType = getTerminalType(s)
         # t.TerminalBrand = getTerminalBrand(t.TerminalType)
@@ -114,7 +115,10 @@ def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, bw: int
         cpe.CpeName = "Cpe-" + ''.join(sample(ascii_letters + digits, 3))
         cpe.MaxDistance = round(normal(100, 10))
         cpe.SupportedType = getSupportedType()
-        cpe.Longitude, cpe.Latitude = getjw(jws, x, y, 0.001, 0.003, 0.1)
+        if mode == 2:  # 切换类
+            cpe.Longitude, cpe.Latitude = getjw(jws, x, y, 0.002, 0.003, 0.1)
+        else:
+            cpe.Longitude, cpe.Latitude = getjw(jws, x, y, 0.001, 0.003, 0.1)
         lamuda = (getDistance(x, y, cpe.Longitude, cpe.Latitude) / 0.28) * (240.0 / MaxTxPower)
         if mode == 1:  # 覆盖质量类
             cpe.RSRP = round(normal(-85, 1.5) * (1 + 0.1 * (lamuda - 1)))
@@ -148,7 +152,7 @@ def get_cpn(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, bw: int
     for t in c.cpes:
         cpe_te_size += len(t.terminals)
     if mode == 1:  # 覆盖质量类
-        get_terminal(i, j, k, -1, mode, randint(10, 15), x, y)
+        get_terminal(i, j, k, -1, mode, randint(10, 20), x, y)
     else:
         get_terminal(i, j, k, -1, mode, randint(5, 10), x, y)
     c.terminals = deepcopy(terminals)
