@@ -1,5 +1,6 @@
 from get_ran import *
-# origin
+# interference problem
+
 n = int(1e4)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):

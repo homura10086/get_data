@@ -55,14 +55,14 @@ train_iter = Data.DataLoader(
     dataset=train_dataset,  # torch TensorDataset format
     batch_size=batch_size,  # mini batch size
     shuffle=True,  # 要不要打乱数据 (打乱比较好)
-    num_workers=8,  # 多线程来读数据
+    num_workers=0,  # 多线程来读数据
     pin_memory=True
 )
 test_iter = Data.DataLoader(
     dataset=test_dataset,  # torch TensorDataset format
     batch_size=batch_size,  # mini batch size
     shuffle=True,  # 要不要打乱数据 (打乱比较好)
-    num_workers=8,  # 多线程来读数据
+    num_workers=0,  # 多线程来读数据
     pin_memory=True
 )
 
