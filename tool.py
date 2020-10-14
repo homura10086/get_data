@@ -80,114 +80,82 @@ def minmaxscaler(data):
 
 
 def index_generate(num, batch_size, device):
-    return torch.ones(batch_size).to(device) * num
+    return torch.ones(batch_size, dtype=torch.int64).view(-1, 1).to(device) * num
 
 
-def sortmax():
-    data_acc1, data_acc2, data_acc3, data_acc4, data_acc5, n = 0, 0, 0, 0, 0, 0
-    data_acc11, data_acc21, data_acc31, data_acc41, data_acc51, n1 = 0, 0, 0, 0, 0, 0
-    data_acc12, data_acc22, data_acc32, data_acc42, data_acc52, n2 = 0, 0, 0, 0, 0, 0
-    data_acc13, data_acc23, data_acc33, data_acc43, data_acc53, n3 = 0, 0, 0, 0, 0, 0
-    data_acc14, data_acc24, data_acc34, data_acc44, data_acc54, n4 = 0, 0, 0, 0, 0, 0
+def softmax(data_iter, device, net, batch_size):
+    net = net.to(device)
+    data_acc1, data_acc2, data_acc3, data_acc4, n = 0, 0, 0, 0, 0
+    data_acc11, data_acc21, data_acc31, data_acc41, n1 = 0, 0, 0, 0, 0
+    data_acc12, data_acc22, data_acc32, data_acc42, n2 = 0, 0, 0, 0, 0
+    data_acc13, data_acc23, data_acc33, data_acc43, n3 = 0, 0, 0, 0, 0
     for X, y in data_iter:
         X = X.float().to(device)
         y = y.to(device)
         y_hat = net(X)
         y_hat_softmax = F.softmax(y_hat, dim=1)  # 各样本概率分布
         y_hat_order = y_hat_softmax.argsort(dim=1)  # 各样本概率分布从小到大的索引排列
-        y_hat_order_max1 = torch.gather(y_hat_order, dim=1, index=index_generate(4)).view(batch_size)
-        y_hat_order_max2 = torch.gather(y_hat_order, dim=1, index=index_generate(3)).view(batch_size)
-        y_hat_order_max3 = torch.gather(y_hat_order, dim=1, index=index_generate(2)).view(batch_size)
-        y_hat_order_max4 = torch.gather(y_hat_order, dim=1, index=index_generate(1)).view(batch_size)
-        y_hat_order_max5 = torch.gather(y_hat_order, dim=1, index=index_generate(0)).view(batch_size)
+        y_hat_order_max1 = torch.gather(y_hat_order, dim=1, index=index_generate(3, batch_size, device))
+        y_hat_order_max2 = torch.gather(y_hat_order, dim=1, index=index_generate(2, batch_size, device))
+        y_hat_order_max3 = torch.gather(y_hat_order, dim=1, index=index_generate(1, batch_size, device))
         for i in range(batch_size):
             if y[i] == 0:
-                n = n + 1
+                n += 1
                 if y_hat_order_max1[i] == 0:
-                    data_acc1 = data_acc1 + 1
+                    data_acc1 += 1
                 elif y_hat_order_max2[i] == 0:
-                    data_acc2 = data_acc2 + 1
+                    data_acc2 += 1
                 elif y_hat_order_max3[i] == 0:
-                    data_acc3 = data_acc3 + 1
-                elif y_hat_order_max4[i] == 0:
-                    data_acc4 = data_acc4 + 1
-                elif y_hat_order_max5[i] == 0:
-                    data_acc5 = data_acc5 + 1
+                    data_acc3 += 1
+                else:
+                    data_acc4 += 1
             elif y[i] == 1:
-                n1 = n1 + 1
+                n1 += 1
                 if y_hat_order_max1[i] == 1:
-                    data_acc11 = data_acc11 + 1
+                    data_acc11 += 1
                 elif y_hat_order_max2[i] == 1:
-                    data_acc21 = data_acc21 + 1
+                    data_acc21 += 1
                 elif y_hat_order_max3[i] == 1:
-                    data_acc31 = data_acc31 + 1
-                elif y_hat_order_max4[i] == 1:
-                    data_acc41 = data_acc41 + 1
-                elif y_hat_order_max5[i] == 1:
-                    data_acc51 = data_acc51 + 1
+                    data_acc31 += 1
+                else:
+                    data_acc41 += 1
             elif y[i] == 2:
-                n2 = n2 + 1
+                n2 += 1
                 if y_hat_order_max1[i] == 2:
-                    data_acc12 = data_acc12 + 1
+                    data_acc12 += 1
                 elif y_hat_order_max2[i] == 2:
-                    data_acc22 = data_acc22 + 1
+                    data_acc22 += 1
                 elif y_hat_order_max3[i] == 2:
-                    data_acc32 = data_acc32 + 1
-                elif y_hat_order_max4[i] == 2:
-                    data_acc42 = data_acc42 + 1
-                elif y_hat_order_max5[i] == 2:
-                    data_acc52 = data_acc52 + 1
-            elif y[i] == 3:
-                n3 = n3 + 1
-                if y_hat_order_max1[i] == 3:
-                    data_acc13 = data_acc13 + 1
-                elif y_hat_order_max2[i] == 3:
-                    data_acc23 = data_acc23 + 1
-                elif y_hat_order_max3[i] == 3:
-                    data_acc33 = data_acc33 + 1
-                elif y_hat_order_max4[i] == 3:
-                    data_acc43 = data_acc43 + 1
-                elif y_hat_order_max5[i] == 3:
-                    data_acc53 = data_acc53 + 1
+                    data_acc32 += 1
+                else:
+                    data_acc42 += 1
             else:
-                n4 = n4 + 1
-                if y_hat_order_max1[i] == 4:
-                    data_acc14 = data_acc14 + 1
-                elif y_hat_order_max2[i] == 4:
-                    data_acc24 = data_acc24 + 1
-                elif y_hat_order_max3[i] == 4:
-                    data_acc34 = data_acc34 + 1
-                elif y_hat_order_max4[i] == 4:
-                    data_acc44 = data_acc44 + 1
-                elif y_hat_order_max5[i] == 4:
-                    data_acc54 = data_acc54 + 1
+                n3 += 1
+                if y_hat_order_max1[i] == 3:
+                    data_acc13 += 1
+                elif y_hat_order_max2[i] == 3:
+                    data_acc23 += 1
+                elif y_hat_order_max3[i] == 3:
+                    data_acc33 += 1
+                else:
+                    data_acc43 += 1
     print('y = 0')
     print(data_acc1 / n)
     print(data_acc2 / n)
     print(data_acc3 / n)
     print(data_acc4 / n)
-    print(data_acc5 / n)
     print('y = 1')
     print(data_acc11 / n1)
     print(data_acc21 / n1)
     print(data_acc31 / n1)
     print(data_acc41 / n1)
-    print(data_acc51 / n1)
     print('y = 2')
     print(data_acc12 / n2)
     print(data_acc22 / n2)
     print(data_acc32 / n2)
     print(data_acc42 / n2)
-    print(data_acc52 / n2)
     print('y = 3')
     print(data_acc13 / n3)
     print(data_acc23 / n3)
     print(data_acc33 / n3)
     print(data_acc43 / n3)
-    print(data_acc53 / n3)
-    print('y = 4')
-    print(data_acc14 / n4)
-    print(data_acc24 / n4)
-    print(data_acc34 / n4)
-    print(data_acc44 / n4)
-    print(data_acc54 / n4)

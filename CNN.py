@@ -114,28 +114,22 @@ class CNN(nn.Module, ABC):
         return output
 
 
-def index_generate(num):
-    data_acc = int(0)
-    index = torch.zeros(batch_size).view(-1, 1).to(device)
-    for i in range(batch_size):
-        index[i][0] = num
-    index = index.long()
-    return index
-
-
 if __name__ == '__main__':
     net = CNN()
     # print(net)  # net architecture
-    net = net.to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # optimize all cnn parameters
-    train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs)
+    # net = net.to(device)
+    # optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # optimize all cnn parameters
+    # train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs)
     # torch.save(net, 'cnn.pkl')  # save entire net
-    torch.save(net.state_dict(), 'cnn_params.pkl')  # save only the parameters
-    # net.load_state_dict(torch.load('./cnn_params.pkl'))
-    # data_iter = Data.DataLoader(
-    #     dataset=dataset,  # torch TensorDataset format
-    #     batch_size=batch_size,  # mini batch size
-    #     shuffle=True,  # 要不要打乱数据 (打乱比较好)
-    #     num_workers=0,  # 多线程来读数据
-    #     pin_memory=True
-    # )
+    # torch.save(net.state_dict(), 'cnn_params.pkl')  # save only the parameters
+
+    net.load_state_dict(torch.load('./cnn_params.pkl'))
+    data_iter = Data.DataLoader(
+        dataset=dataset,  # torch TensorDataset format
+        batch_size=batch_size,  # mini batch size
+        shuffle=True,  # 要不要打乱数据 (打乱比较好)
+        num_workers=0,  # 多线程来读数据
+        pin_memory=True,
+        drop_last=True
+    )
+    softmax(data_iter, device, net, batch_size)
