@@ -1,6 +1,7 @@
 from get_ran import *
 # interference problem
-
+# mode0 正常
+# mode1
 n = int(1e4)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):

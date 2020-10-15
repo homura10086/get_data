@@ -1,7 +1,7 @@
 from math import *
 from random import randint, uniform, sample
 from string import ascii_letters, digits
-from numpy.random import normal
+from numpy.random import normal, choice
 from data import *
 from copy import deepcopy
 
@@ -13,12 +13,7 @@ jws = []
 
 
 def getId(i: int):
-    if i < 9:
-        return "00" + str(i + 1)
-    elif i < 99:
-        return '0' + str(i + 1)
-    else:
-        return str(i + 1)
+    return "0" * (3 - len(str(i + 1))) + str(i + 1)
 
 
 # def getStorage(s):
@@ -35,13 +30,7 @@ def getId(i: int):
 
 def getSupportedType():
     st = ("4G", "5G", "6G")
-    i = randint(1, 10)
-    if i <= 6:
-        return st[0]
-    elif i >= 9:
-        return st[2]
-    else:
-        return st[1]
+    return choice(st, p=(0.6, 0.3, 0.1))
 
 
 def getDistance(lng1: float, lat1: float, lng2: float, lat2: float):

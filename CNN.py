@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as Data
 from torch.nn import init
-from tool import minmaxscaler, train_ch5
+from tool import *
 
 torch.manual_seed(1)  # reproducible
 torch.cuda.manual_seed_all(1)  # 为所有GPU设置随机种子
@@ -120,4 +120,15 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)  # optimize all cnn parameters
     train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
     # torch.save(cnn, 'cnn.pkl')  # save entire net
-    # torch.save(cnn.state_dict(), 'cnn_params.pkl')  # save only the parameters
+    torch.save(cnn.state_dict(), 'cnn_params.pkl')  # save only the parameters
+    
+    # cnn.load_state_dict(torch.load('./cnn_params.pkl'))
+    # data_iter = Data.DataLoader(
+    #     dataset=dataset,  # torch TensorDataset format
+    #     batch_size=batch_size,  # mini batch size
+    #     shuffle=True,  # 要不要打乱数据 (打乱比较好)
+    #     num_workers=0,  # 多线程来读数据
+    #     pin_memory=True,
+    #     drop_last=True
+    # )
+    # softmax(data_iter, device, cnn, batch_size)

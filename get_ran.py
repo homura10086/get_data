@@ -35,22 +35,13 @@ s = getplmn()
 
 
 def getPlmnList(s: str):
-    i = 0
-    v = []
-    for x in plmn:
-        if s == x:
-            break
-        i += 1
+    i = plmn.index(s)
     if i <= 3:
-        for k in range(4):
-            v.append(plmn[k])
+        return plmn[:4]
     elif i <= 6:
-        for k in range(4, 7):
-            v.append(plmn[k])
+        return plmn[4:7]
     else:
-        for k in range(7, 10):
-            v.append(plmn[k])
-    return v
+        return plmn[7:]
 
 
 def jw2xy(l: float, B: float):
@@ -74,20 +65,11 @@ def jw2xy(l: float, B: float):
 
 
 def getSnaList(s: str, i: int):
-    l = []
-    while i != 0:
-        s1 = s + str(randint(0, 255)) + str(randint(0, 16777215))
-        l.append(s1)
-        i -= 1
-    return l
+    return [s + str(randint(0, 255)) + str(randint(0, 16777215)) for _ in range(i)]
 
 
 def getRelatedCellDuList(i: int):
-    v = []
-    for x in dus[i].celldus:
-        s1 = x.CellDuId
-        v.append(s1)
-    return v
+    return [x.CellDuId for x in dus[i].celldus]
 
 
 # def getStrList(v, i):
