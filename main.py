@@ -1,7 +1,10 @@
 from get_ran import *
 # interference problem
 # mode0 正常
-# mode1
+# mode1 杂散干扰
+# mode2 邻道干扰
+# mode3 交调干扰
+# mode4 阻塞干扰
 n = int(1e4)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):
