@@ -126,11 +126,11 @@ def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, mode: i
         lamuda = (getDistance(x, y, cpe.Longitude, cpe.Latitude) / 0.28) * (240.0 / MaxTxPower)
         cpe.TransRatePeak = round(normal(500, 10) * (1 + 0.2 * (1 - lamuda)))
         cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
-        if mode == 0 or mode == 4:
+        if mode == 0 or mode == 4:  # 正常/覆盖不均衡
             cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        elif mode == 1:
+        elif mode == 1:    # 弱覆盖
             cpe.RSRP = round(normal(-105, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        else:
+        else:   # 越区/重叠覆盖
             cpe.RSRP = round(normal(-85, 1.5) * (1 + 0.1 * (lamuda - 1)))
         cpe.RSRQ = round(-11.25 * (1 + 0.4 * (lamuda - 1)))
         TransRatePeak_mean = Mean(TransRatePeak_mean, cpe.TransRatePeak, e, cpe_size)
