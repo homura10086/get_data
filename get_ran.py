@@ -140,7 +140,7 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode_temp: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
-    mode = mode_temp
+    mode = mode_temp  # for test
     '''Here ! ! !'''
     if mode_temp != 0:
         rand_indexs = sample(range(6), randint(1, 6))
