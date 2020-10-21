@@ -157,8 +157,8 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
-    rand_indexs = sample(range(6), randint(0, 6))
-    mode_temp = randint(1, 4)
+    rand_indexs = sample(range(6), randint(1, 6))
+    mode_temp = randint(0, 4)
     for k in range(nrcellsize):
         n = NrCell()
         n.NrCellId = "GNB" + getId(i) + "/NrCell" + getId(k)
@@ -166,7 +166,9 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
         # n.CellState = getValue(CellState)
         n.S_NSSAIList = getSnaList(s, randint(1, 8))
         # n.NrTAC = to_string(getRandom(0, 65535))
-        if k in rand_indexs and (k != 0 or mode_temp != 3):  # 第一个cell无重叠覆盖（mode=3)
+        if mode_temp == 0:
+            pass
+        elif k in rand_indexs and (k != 0 or mode_temp != 3):  # 第一个cell无重叠覆盖（mode=3)
             mode = mode_temp
         else:
             mode = 0
@@ -217,23 +219,30 @@ def get_nrcell_performance():
                 lamuda1 = 5e-7 * (abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j - 1].ArfcnDL) +
                                   abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j + 1].ArfcnDL)) / 2
             mode = modes[k]
-            if mode == 3:  # 重叠覆盖
-                y.ULMeanNL = round(normal(-90, 3) * (1 + lamuda1))
+            if mode == 1:  # 弱覆盖
+                y.ULMeanNL = round(normal(-95, 3) * (1 + lamuda1))
                 y.UpOctUL = y.UpOctDL / normal(8, 1)
                 y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
+                y.NbrPktLossDL = round(uniform(0.1, 0.9) * y.NbrPktDL)
+            if mode == 3:  # 重叠覆盖
+                y.ULMeanNL = round(normal(-95, 3) * (1 + lamuda1))
+                y.UpOctUL = y.UpOctDL / normal(8, 1)
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
+                y.NbrPktLossDL = round(uniform(0.05, 0.1) * y.NbrPktDL)
             elif mode == 4:  # 覆盖不均衡
                 lamuda2 = 5e-7 * abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j].ArfcnDL)
-                y.ULMeanNL = round(normal(-90, 3) * (1 + lamuda2))
+                y.ULMeanNL = round(normal(-95, 3) * (1 + lamuda2))
                 y.UpOctUL = y.UpOctDL / normal(14, 1)
                 y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.1, 0.9))
+                y.NbrPktLossDL = round(uniform(0.05, 0.1) * y.NbrPktDL)
             else:
-                y.ULMeanNL = round(normal(-110, 3) * (1 + lamuda1))
+                y.ULMeanNL = round(-105 * (1 + lamuda1))
                 y.UpOctUL = y.UpOctDL / normal(8, 1)
                 y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
+                y.NbrPktLossDL = round(uniform(0.05, 0.1) * y.NbrPktDL)
             y.ULMaxNL = round(y.ULMeanNL / normal(1.2, 0.1))
             y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             y.NbrPktUL = round(y.UpOctUL / normal(1, 0.1))
-            y.NbrPktLossDL = round(uniform(0, 0.1) * y.NbrPktDL)
             y.CellMaxTxPower = rrus[k // 3].antennas[k % 3].MaxTxPower / normal(20, 3)
             y.CellMeanTxPower = y.CellMaxTxPower * normal(0.5, 0.03)
             k += 1
@@ -322,7 +331,7 @@ def get_antenna(i: int, j: int, f: bool, antennasize: int):
             a.MaxTiltValue = randint(100, 1800)
         elif mode == 3:  # 重叠覆盖
             a.MaxTxPower = round(normal(330, 15))
-            a.MaxTiltValue = randint(1800, 3600)
+            a.MaxTiltValue = randint(100, 1800)
         else:
             a.MaxTxPower = round(normal(240, 15))
             a.MaxTiltValue = randint(1800, 3600)
@@ -521,7 +530,7 @@ def Save_Data(datacsv, f: int):
     if f == 0:
         writer.writerow(
             ["UpOctUL", "UpOctDL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnDL", "ArfcnUL", "ULMeanNL",
-             "MaxTxPower", "RetTilt", "RSRP", "Label"])
+             "NbrPktLossDL", "MaxTxPower", "RetTilt", "RSRP", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
@@ -533,7 +542,8 @@ def Save_Data(datacsv, f: int):
         writer.writerow(
             [temps.nrs[i].UpOctUL, temps.nrs[i].UpOctDL, temps.nrs[i].AttOutExecInterXn,
              temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnDL, temps.nrs[i].ArfcnUL, temps.nrs[i].ULMeanNL,
-             temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].RSRP_mean), modes[i]])
+             temps.nrs[i].NbrPktLossDL, temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].RSRP_mean),
+             modes[i]])
         if i % 6 == 5:
             writer.writerow('')
     modes.clear()
