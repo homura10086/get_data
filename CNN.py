@@ -15,7 +15,7 @@ B_INIT = -0.2
 num_RAN = int(1e4)
 num_cell = 6
 num_sample = (18 // num_cell) * num_RAN
-num_feature = 10
+num_feature = 5
 rate_test = 0.2
 batch_size = 256
 lr = 0.01
@@ -42,8 +42,9 @@ for i in range(0, num_sample * num_cell, 6):
             break
     if flag == 0:
         labels[i // num_cell] = 0
-# print("0:", tuple(labels).count(0), '\n' "1:", tuple(labels).count(1), '\n' "2:", tuple(labels).count(2), '\n' "3:",
-#       tuple(labels).count(3), '\n' "4:", tuple(labels).count(4))
+# print("0:", tuple(labels).count(0), '\n' "1:", tuple(labels).count(1), '\n' "2:", tuple(labels).count(2),
+# '\n' "3:", tuple(labels).count(3), '\n' "total:", tuple(labels).count(0) + tuple(labels).count(1) + tuple(
+# labels).count(2) + tuple(labels).count(3))
 
 # 数据集处理
 dataset = Data.TensorDataset(features, labels)
@@ -75,33 +76,33 @@ def _set_init(layer):
 class CNN(nn.Module, ABC):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Sequential(  # input shape (1, 6, 10)
+        self.conv1 = nn.Sequential(  # input shape (1, 6, 5)
             # nn.BatchNorm2d(1),
             nn.Conv2d(in_channels=1,  # input height
-                      out_channels=16,  # n_filters
-                      kernel_size=3,  # filter size
+                      out_channels=5,  # n_filters
+                      kernel_size=(3, 2),  # filter size
                       stride=1,  # filter movement/step
                       padding=0,  # if want same width and length of this image after con2d, padding=(kernel_size-1)/2
                       # if stride=1
-                      ),  # output shape (16, 4, 8)
+                      ),  # output shape (5, 4, 4)
             # nn.Dropout(0.5),
             # nn.BatchNorm2d(16),
             nn.ReLU(),  # activation
-            nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (16, 2, 4)
+            # nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (16, 2, 4)
         )
-        self.conv2 = nn.Sequential(  # input shape (16, 2, 4)
-            nn.Conv2d(in_channels=16,
-                      out_channels=32,
+        self.conv2 = nn.Sequential(  # input shape (5, 4, 4)
+            nn.Conv2d(in_channels=5,
+                      out_channels=10,
                       kernel_size=1,
                       stride=1,
-                      padding=0),  # output shape (32, 2, 4)
+                      padding=0),  # output shape (10, 4, 4)
             # nn.Dropout(0.5),
             # nn.BatchNorm2d(32),
             nn.ReLU(),  # activation
-            nn.MaxPool2d(kernel_size=2),  # output shape (32, 1, 2)
+            nn.MaxPool2d(kernel_size=2),  # output shape (10, 2, 2)
         )
         self.out = nn.Sequential(
-            nn.Linear(32 * 1 * 2, 5),  # fully connected layer, output 5 classes
+            nn.Linear(10 * 2 * 2, 4),  # fully connected layer, output 5 classes
             # nn.Softmax(dim=0),
         )
         # _set_init(self.out)  # initialization
@@ -109,7 +110,7 @@ class CNN(nn.Module, ABC):
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
-        x = x.view(x.size(0), -1)  # flatten the output of conv2 to (batch_size, 32 * 1 * 2)
+        x = x.view(x.size(0), -1)  # flatten the output of conv2 to (batch_size, 10 * 2 * 2)
         output = self.out(x)
         return output
 

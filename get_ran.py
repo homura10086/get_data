@@ -139,8 +139,10 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
-    rand_indexs = sample(range(6), randint(0, 6))
-    mode_temp = randint(1, 4)
+    '''Here ! ! !'''
+    rand_indexs = sample(range(6), randint(1, 6))
+    mode_temp = randint(0, 3)
+    '''here'''
     for k in range(nrcellsize):
         n = NrCell()
         n.NrCellId = "GNB" + getId(i) + "/NrCell" + getId(k)
@@ -148,25 +150,21 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
         # n.CellState = getValue(CellState)
         n.S_NSSAIList = getSnaList(s, randint(1, 8))
         # n.NrTAC = to_string(getRandom(0, 65535))
-        if k in rand_indexs and (k != 0 or mode_temp != 3):  # 第一个cell无重叠覆盖（mode=3)
+        '''Here ! ! !'''
+        if mode_temp != 0 and k in rand_indexs:
             mode = mode_temp
-        else:
-            mode = 0
+        '''here'''
         modes.append(mode)
-        if mode == 3:  # 重叠覆盖
-            index = round(dl1.index(nrs[k - 1].ArfcnDL) + normal(0, 1))
+        if mode == 2 and k != 0:  # 邻道干扰，第一个cell无邻道干扰(mode=2)
+            index = round(ul1.index(nrs[k - 1].ArfcnUL) + normal(0, 1))
             if index < 0:
                 index = 0
-            elif index > (len(dl1) - 1):
-                index = len(dl1) - 1
-            n.ArfcnDL = dl1[index]
-            n.ArfcnUL = choice(ul1)
-        elif mode == 4:  # 覆盖不均衡
-            n.ArfcnDL = choice(dl1)
-            n.ArfcnUL = ul1[dl1.index(n.ArfcnDL)]
+            elif index > (len(ul1) - 1):
+                index = len(ul1) - 1
+            n.ArfcnUL = ul1[index]
         else:
-            n.ArfcnDL = choice(dl1)
             n.ArfcnUL = choice(ul1)
+        n.ArfcnDL = choice(dl1)
         # //n.ArfcnSUL = getValue(sul)
         n.BsChannelBwDL = choice(bw1)
         n.BsChannelBwUL = choice(bw1)
@@ -191,33 +189,32 @@ def get_nrcell_performance():
             y.UpOctDL = shannon(gnbs[i].nrcells[j].BsChannelBwDL,
                                 rrus[k // 3].antennas[k % 3].MaxTxPower) / 8E3 * normal(0.5, 0.03) * y.ConnMean
             y.AttOutExecInterXn = round(normal(15, 1) * y.ConnMean)
+            # 干扰电平影响因子
             if j == 0:  # 每个gnb内的第一个小区
-                lamuda1 = 5e-7 * abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j + 1].ArfcnDL)
+                lamuda_interference = 2e-7 * abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j + 1].ArfcnUL)
             elif j == 5:  # 每个gnb内的最后一个小区
-                lamuda1 = 5e-7 * abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j - 1].ArfcnDL)
+                lamuda_interference = 2e-7 * abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j - 1].ArfcnUL)
             else:
-                lamuda1 = 5e-7 * (abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j - 1].ArfcnDL) +
-                                  abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j + 1].ArfcnDL)) / 2
+                lamuda_interference = 2e-7 * (abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j - 1].ArfcnUL) +
+                                              abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j + 1].ArfcnUL)) / 2
             mode = modes[k]
-            if mode == 3:  # 重叠覆盖
-                y.ULMeanNL = round(normal(-90, 3) * (1 + lamuda1))
-                y.UpOctUL = y.UpOctDL / normal(8, 1)
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
-            elif mode == 4:  # 覆盖不均衡
-                lamuda2 = 5e-7 * abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j].ArfcnDL)
-                y.ULMeanNL = round(normal(-90, 3) * (1 + lamuda2))
-                y.UpOctUL = y.UpOctDL / normal(14, 1)
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.1, 0.9))
+            if mode == 1 or mode == 2:  # 杂散干扰/邻道干扰
+                y.ULMeanNL = round(normal(-95, 1) * (1 + lamuda_interference))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.5, 0.9))
+            elif mode == 3:  # 阻塞干扰
+                y.ULMeanNL = round(normal(-85, 1) * (1 + lamuda_interference))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.1, 0.5))
             else:
-                y.ULMeanNL = round(normal(-110, 3) * (1 + lamuda1))
-                y.UpOctUL = y.UpOctDL / normal(8, 1)
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
+                y.ULMeanNL = round(normal(-105, 1) * (1 + lamuda_interference))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 0.99))
+            y.UpOctUL = y.UpOctDL / normal(8, 1)
             y.ULMaxNL = round(y.ULMeanNL / normal(1.2, 0.1))
             y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             y.NbrPktUL = round(y.UpOctUL / normal(1, 0.1))
             y.NbrPktLossDL = round(uniform(0, 0.1) * y.NbrPktDL)
             y.CellMaxTxPower = rrus[k // 3].antennas[k % 3].MaxTxPower / normal(20, 3)
             y.CellMeanTxPower = y.CellMaxTxPower * normal(0.5, 0.03)
+            get_cpn_performance(k, lamuda_interference, mode, rrus[k // 3].antennas[k % 3].MaxTxPower)
             k += 1
     cpe_te_sizes.clear()
 
@@ -295,19 +292,9 @@ def get_antenna(i: int, j: int, f: bool, antennasize: int):
         a = Antenna()
         a.AntennaId = "GNB" + getId(i) + "/Rru" + getId(j) + "/Antenna" + getId(k)
         a.AntennaName = "Antenna-" + ''.join(sample(ascii_letters + digits, 3))
-        mode = modes[i*6+j*3+k]
-        if mode == 1:  # 弱覆盖
-            a.MaxTxPower = round(normal(150, 15))
-            a.MaxTiltValue = randint(1800, 3600)
-        elif mode == 2:  # 越区覆盖
-            a.MaxTxPower = round(normal(330, 15))
-            a.MaxTiltValue = randint(100, 1800)
-        elif mode == 3:  # 重叠覆盖
-            a.MaxTxPower = round(normal(330, 15))
-            a.MaxTiltValue = randint(1800, 3600)
-        else:
-            a.MaxTxPower = round(normal(240, 15))
-            a.MaxTiltValue = randint(1800, 3600)
+        mode = modes[i * 6 + j * 3 + k]
+        a.MaxTxPower = round(normal(240, 15))
+        a.MaxTiltValue = randint(1800, 3600)
         a.MinTiltValue = randint(1, a.MaxTiltValue - 1)
         a.RetTilt = randint(a.MinTiltValue, a.MaxTiltValue)
         # if (f) {
@@ -320,13 +307,12 @@ def get_antenna(i: int, j: int, f: bool, antennasize: int):
         # }
         # int j = getRandom(1, 64)
         # antennas.beam = get_beam(i, j)
-        cpe_te_size = 0
-        cpe_te_size = get_cpn(i, j, k, dus[j].Longitude, dus[j].Latitude, cpe_te_size, a.MaxTxPower, mode)
+        cpe_te_size = get_cpn_configuration(i, j, k, dus[j].Longitude, dus[j].Latitude, mode)
         cpe_te_sizes.append(cpe_te_size)
         antennas.append(a)
 
 
-def get_rru_configuration(rrusize: int, mode: int):
+def get_rru_configuration(rrusize: int):
     antennasize = 3
     for j in range(len(gnbs)):
         for k in range(rrusize):
@@ -369,7 +355,7 @@ def Get_Data(i: int, mode: int = 0):
     jws.clear()
     get_cu(i, cusize)
     ran.cus = deepcopy(cus)
-    get_rru_configuration(rrusize, mode)
+    get_rru_configuration(rrusize)
     get_nrcell_performance()
     get_rru_performance(rrusize)
     ran.rrus = deepcopy(rrus)
@@ -502,22 +488,17 @@ def Save_Data(datacsv, f: int):
     writer = csv.writer(datacsv, dialect="excel")
     if f == 0:
         writer.writerow(
-            ["UpOctUL", "UpOctDL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnDL", "ArfcnUL", "ULMeanNL",
-             "MaxTxPower", "RetTilt", "RSRP", "Label"])
+            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "RSRQ", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
             temps.nrs.append(nrcell)
-    for rru in ran.rrus:
-        for antenna in rru.antennas:
-            temps.ans.append(antenna)
     for i in range(len(temps.nrs)):
         writer.writerow(
-            [temps.nrs[i].UpOctUL, temps.nrs[i].UpOctDL, temps.nrs[i].AttOutExecInterXn,
-             temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnDL, temps.nrs[i].ArfcnUL, temps.nrs[i].ULMeanNL,
-             temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].RSRP_mean), modes[i]])
+            [temps.nrs[i].ULMeanNL, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnUL,
+             round(cpns[i].RSRQ_mean), modes[i]])
         if i % 6 == 5:
             writer.writerow('')
     modes.clear()
-    # writer.writerow('')
-
+    cpns.clear()
+    writer.writerow('')

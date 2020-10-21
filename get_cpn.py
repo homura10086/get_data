@@ -102,9 +102,8 @@ def get_terminal(i: int, j: int, k: int, l: int, terminalsize: int, x: float, y:
         terminals.append(t)
 
 
-def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, mode: int):
+def get_cpe_configuration(i: int, j: int, k: int, x: float, y: float):
     cpe_size = randint(3, 5)
-    TransRatePeak_mean, RSRP_mean, RSRQ_mean = 0, 0, 0
     for e in range(cpe_size):
         cpe = Cpe()
         cpe.CpeId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k) + "/Cpe" + getId(e)
@@ -112,33 +111,45 @@ def get_cpe(i: int, j: int, k: int, x: float, y: float, MaxTxPower: int, mode: i
         cpe.MaxDistance = round(normal(100, 10))
         cpe.SupportedType = getSupportedType()
         cpe.Longitude, cpe.Latitude = getjw(jws, x, y, 0.001, 0.003, 0.1)
-        lamuda = (getDistance(x, y, cpe.Longitude, cpe.Latitude) / 0.28) * (240.0 / MaxTxPower)
-        cpe.TransRatePeak = round(normal(500, 10) * (1 + 0.2 * (1 - lamuda)))
-        cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
-        if mode == 0 or mode == 4:
-            cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        elif mode == 1:
-            cpe.RSRP = round(normal(-105, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        else:
-            cpe.RSRP = round(normal(-85, 1.5) * (1 + 0.1 * (lamuda - 1)))
-        cpe.RSRQ = round(-11.25 * (1 + 0.4 * (lamuda - 1)))
-        TransRatePeak_mean = Mean(TransRatePeak_mean, cpe.TransRatePeak, e, cpe_size)
-        RSRP_mean = Mean(RSRP_mean, cpe.RSRP, e, cpe_size)
-        RSRQ_mean = Mean(RSRQ_mean, cpe.RSRQ, e, cpe_size)
         get_terminal(i, j, k, e, randint(2, 3), cpe.Longitude, cpe.Latitude)
         cpe.terminals = deepcopy(terminals)
         terminals.clear()
         cpes.append(cpe)
+
+
+def get_cpe_performance(lamuda_interference: float, mode: int, k: int, MaxTxPower: int):
+    from get_ran import dus
+    TransRatePeak_mean, RSRP_mean, RSRQ_mean = 0, 0, 0
+    for e, cpe in enumerate(cpns[k].cpes):
+        cpe_size = len(cpns[k].cpes)
+        # 传输速率/接收功率影响因子
+        lamuda_coverage = (getDistance(dus[k//3].Longitude, dus[k//3].Longitude, cpe.Longitude, cpe.Latitude) / 0.28) \
+            * (240.0 / MaxTxPower)
+        cpe.TransRatePeak = round(normal(500, 10) * (1 + 0.2 * (1 - lamuda_coverage)))
+        cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
+        cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda_coverage - 1)))
+        if mode == 3:  # 阻塞干扰
+            cpe.RSRQ = round(-18 * (1 - 3 * lamuda_interference))
+        else:
+            cpe.RSRQ = round(-12 * (1 - 3 * lamuda_interference))
+        TransRatePeak_mean = Mean(TransRatePeak_mean, cpe.TransRatePeak, e, cpe_size)
+        RSRP_mean = Mean(RSRP_mean, cpe.RSRP, e, cpe_size)
+        RSRQ_mean = Mean(RSRQ_mean, cpe.RSRQ, e, cpe_size)
     return TransRatePeak_mean, RSRP_mean, RSRQ_mean
 
 
-def get_cpn(i: int, j: int, k: int, x: float, y: float, cpe_te_size: int, MaxTxPower: int, mode: int):
+def get_cpn_performance(k: int, lamuda: float, mode: int, MaxTxPower: int):
+    cpns[k].TransRate_mean, cpns[k].RSRP_mean, cpns[k].RSRQ_mean = get_cpe_performance(lamuda, mode, k, MaxTxPower)
+
+
+def get_cpn_configuration(i: int, j: int, k: int, x: float, y: float, mode: int):
     c = CpnSubNetwork()
     c.CpnSNId = "GNB" + getId(i) + "/DU" + getId(j) + "/Cpn" + getId(k)
     c.CpnSNName = "Cpn-" + ''.join(sample(ascii_letters + digits, 3))
-    c.TransRate_mean, c.RSRP_mean, c.RSRQ_mean = get_cpe(i, j, k, x, y, MaxTxPower, mode)
+    get_cpe_configuration(i, j, k, x, y)
     c.cpes = deepcopy(cpes)
     cpes.clear()
+    cpe_te_size = 0
     for t in c.cpes:
         cpe_te_size += len(t.terminals)
     if mode == 1:  # 弱覆盖
@@ -150,7 +161,6 @@ def get_cpn(i: int, j: int, k: int, x: float, y: float, cpe_te_size: int, MaxTxP
     c.terminals = deepcopy(terminals)
     terminals.clear()
     if len(cpns) == 18:
-        cpns.clear()
         jws.clear()
     cpns.append(c)
     return cpe_te_size
