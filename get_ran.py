@@ -153,6 +153,8 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
         '''Here ! ! !'''
         if mode_temp != 0 and k in rand_indexs:
             mode = mode_temp
+        else:
+            mode = 0
         '''here'''
         modes.append(mode)
         if mode == 2 and k != 0:  # 邻道干扰，第一个cell无邻道干扰(mode=2)
@@ -189,6 +191,7 @@ def get_nrcell_performance():
             y.UpOctDL = shannon(gnbs[i].nrcells[j].BsChannelBwDL,
                                 rrus[k // 3].antennas[k % 3].MaxTxPower) / 8E3 * normal(0.5, 0.03) * y.ConnMean
             y.AttOutExecInterXn = round(normal(15, 1) * y.ConnMean)
+            y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             # 干扰电平影响因子
             if j == 0:  # 每个gnb内的第一个小区
                 lamuda_interference = 2e-7 * abs(gnbs[i].nrcells[j].ArfcnUL - gnbs[i].nrcells[j + 1].ArfcnUL)
@@ -200,18 +203,19 @@ def get_nrcell_performance():
             mode = modes[k]
             if mode == 1 or mode == 2:  # 杂散干扰/邻道干扰
                 y.ULMeanNL = round(normal(-95, 1) * (1 + lamuda_interference))
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.5, 0.9))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * normal(0.7, 0.07))
+                y.NbrPktLossDL = round(normal(0.3, 0.07) * y.NbrPktDL)
             elif mode == 3:  # 阻塞干扰
                 y.ULMeanNL = round(normal(-85, 1) * (1 + lamuda_interference))
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.1, 0.5))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * normal(0.3, 0.07))
+                y.NbrPktLossDL = round(normal(0.7, 0.07) * y.NbrPktDL)
             else:
                 y.ULMeanNL = round(normal(-105, 1) * (1 + lamuda_interference))
-                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 0.99))
+                y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
+                y.NbrPktLossDL = round(uniform(0, 0.1) * y.NbrPktDL)
             y.UpOctUL = y.UpOctDL / normal(8, 1)
             y.ULMaxNL = round(y.ULMeanNL / normal(1.2, 0.1))
-            y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             y.NbrPktUL = round(y.UpOctUL / normal(1, 0.1))
-            y.NbrPktLossDL = round(uniform(0, 0.1) * y.NbrPktDL)
             y.CellMaxTxPower = rrus[k // 3].antennas[k % 3].MaxTxPower / normal(20, 3)
             y.CellMeanTxPower = y.CellMaxTxPower * normal(0.5, 0.03)
             get_cpn_performance(k, lamuda_interference, mode, rrus[k // 3].antennas[k % 3].MaxTxPower)
@@ -488,7 +492,7 @@ def Save_Data(datacsv, f: int):
     writer = csv.writer(datacsv, dialect="excel")
     if f == 0:
         writer.writerow(
-            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "RSRQ", "Label"])
+            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "NbrPktDL", "NbrPktLossDL", "RSRQ", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
@@ -496,7 +500,7 @@ def Save_Data(datacsv, f: int):
     for i in range(len(temps.nrs)):
         writer.writerow(
             [temps.nrs[i].ULMeanNL, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnUL,
-             round(cpns[i].RSRQ_mean), modes[i]])
+             temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL, round(cpns[i].RSRQ_mean), modes[i]])
         if i % 6 == 5:
             writer.writerow('')
     modes.clear()

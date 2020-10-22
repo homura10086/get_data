@@ -7,7 +7,7 @@ from get_ran import *
 n = int(1e4)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):
-		# mode = int((i/n)*4)  # test
+		# mode = int((i/n)*4)  # for test
 		Get_Data(i)
 		# filename1 = "Config_" + str(modes[i])
 		# Save_Config(filename1)
