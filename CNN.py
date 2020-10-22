@@ -32,8 +32,8 @@ for i in range(num_feature):
 features = torch.from_numpy(feature_normalize).reshape(num_sample, 1, num_cell, num_feature)
 label = torch.Tensor(label.values).squeeze()
 labels = torch.zeros(num_sample, dtype=torch.int64)
-for i in range(0, num_sample * num_cell, 6):
-    labels_temp = label[i:i+6]
+for i in range(0, num_sample * num_cell, num_cell):
+    labels_temp = label[i:i+num_cell]
     flag = 0
     for lab in labels_temp:
         if lab != 0:

@@ -6,7 +6,7 @@ from get_ran import *
 # mode3 重叠覆盖
 # mode4 覆盖不均衡
 
-n = int(1e4)  # num_sample
+n = int(10)  # num_sample
 with open("data.csv", "w", newline="") as datacsv:
 	for i in range(n):
 		mode = (i/n)*5  # for test

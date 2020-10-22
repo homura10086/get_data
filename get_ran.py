@@ -157,8 +157,10 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
+    '''Here ! ! !'''
     rand_indexs = sample(range(6), randint(1, 6))
     mode_temp = randint(0, 4)
+    '''here'''
     for k in range(nrcellsize):
         n = NrCell()
         n.NrCellId = "GNB" + getId(i) + "/NrCell" + getId(k)
@@ -166,12 +168,14 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode: int):
         # n.CellState = getValue(CellState)
         n.S_NSSAIList = getSnaList(s, randint(1, 8))
         # n.NrTAC = to_string(getRandom(0, 65535))
+        '''Here ! ! !'''
         if mode_temp == 0:
             pass
         elif k in rand_indexs and (k != 0 or mode_temp != 3):  # 第一个cell无重叠覆盖（mode=3)
             mode = mode_temp
         else:
             mode = 0
+        '''here'''
         modes.append(mode)
         if mode == 3:  # 重叠覆盖
             index = round(dl1.index(nrs[k - 1].ArfcnDL) + normal(0, 1))
