@@ -4,6 +4,8 @@ from copy import deepcopy
 from random import randrange, choice
 from numpy import random
 
+# import time
+
 lon, lan = 116.39, 39.9
 ran = RanSubNetwork()
 gnbs, dus, cus, nrs, celldus, rrus, antennas = [], [], [], [], [], [], []
@@ -488,18 +490,20 @@ def Save_Perform(filename: str):
 #     save_node_cpn(p, i);
 
 
-def Save_Data(datacsv, f: int):
+def Save_Data(datacsv, f: bool):
     writer = csv.writer(datacsv, dialect="excel")
-    if f == 0:
+    if not f:
         writer.writerow(
-            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "NbrPktDL", "NbrPktLossDL", "RSRQ", "Label"])
+            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "NbrPktDL", "NbrPktLossDL", "RSRQ",
+             "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
             temps.nrs.append(nrcell)
     for i in range(len(temps.nrs)):
         writer.writerow(
-            [temps.nrs[i].ULMeanNL, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnUL,
+            [temps.nrs[i].ULMeanNL, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn,
+             temps.nrs[i].ArfcnUL,
              temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL, round(cpns[i].RSRQ_mean), modes[i]])
         if i % 6 == 5:
             writer.writerow('')

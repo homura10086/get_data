@@ -28,6 +28,7 @@ def train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs):
     print("training on", device)
     loss = torch.nn.CrossEntropyLoss()
     batch_count = 0
+    train_acc, test_acc, train_loss = [], [], []
     for epoch in range(num_epochs):
         train_l_sum, train_acc_sum, n, start = 0.0, 0.0, 0, time.time()
         for X, y in train_iter:
@@ -42,9 +43,29 @@ def train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs):
             train_acc_sum += (y_hat.argmax(dim=1) == y).sum().to(device).item()
             n += y.shape[0]
             batch_count += 1
-        test_acc = evaluate_accuracy_2(test_iter, net, device)
+        test_acc.append(evaluate_accuracy_2(test_iter, net, device))
+        train_acc.append(train_acc_sum / n)
+        train_loss.append(train_l_sum / batch_count)
         print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f, time %.1f sec'
-              % (epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
+              % (epoch + 1, train_loss[epoch], train_acc[epoch], test_acc[epoch], time.time() - start))
+    # 绘图
+    plt.plot(range(num_epochs), test_acc, linewidth=2, color='olivedrab', label='test data')
+    plt.plot(range(num_epochs), train_acc, linewidth=2, color='chocolate', linestyle='--', label='train data')
+    plt.legend(loc='lower right')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    test_max_index = np.argmax(test_acc).item()
+    show_max = '[' + str(test_max_index) + ', ' + str(round(test_acc[test_max_index], 3)) + ']'
+    # 以●绘制最大值点和最小值点的位置
+    plt.plot(test_max_index, test_acc[test_max_index], 'ko')
+    plt.annotate(show_max, xy=(test_max_index, test_acc[test_max_index]),
+                 xytext=(test_max_index, test_acc[test_max_index]))
+    plt.grid()
+    plt.show()
+    plt.plot(range(num_epochs), train_loss, linewidth=2, label='loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.show()
 
 
 def minmaxscaler(data):

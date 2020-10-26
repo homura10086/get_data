@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.utils.data as Data
 from torch.nn import init
 from tool import *
+from main import num_core
 
 torch.manual_seed(1)  # reproducible
 torch.cuda.manual_seed_all(1)  # 为所有GPU设置随机种子
@@ -23,8 +24,16 @@ num_epochs = 50
 device = 'cuda'
 
 # 数据处理
-feature = pd.read_csv('data.csv', header=0, usecols=range(num_feature))
-label = pd.read_csv('data.csv', header=0, usecols=[num_feature])
+feature_list, label_list = [], []
+for i in range(num_core):
+    feature_tmp = pd.read_csv('data-' + str(i+1) + '.csv', header=0, usecols=range(num_feature))
+    label_tmp = pd.read_csv('data-' + str(i+1) + '.csv', header=0, usecols=[num_feature])
+    feature_list.append(feature_tmp)
+    label_list.append(label_tmp)
+feature = pd.concat(feature_list)
+label = pd.concat(label_list)
+data = pd.concat([feature, label], axis=1)
+data.to_csv('data.csv')
 feature_normalize = np.zeros((num_sample * num_cell, num_feature))
 for i in range(num_feature):
     operation_feature = np.array(feature[feature.columns[i]])
@@ -42,6 +51,8 @@ for i in range(0, num_sample * num_cell, num_cell):
             break
     if flag == 0:
         labels[i // num_cell] = 0
+
+# for test
 # print("0:", tuple(labels).count(0), '\n' "1:", tuple(labels).count(1), '\n' "2:", tuple(labels).count(2),
 #       '\n' "3:", tuple(labels).count(3), '\n' "total:", tuple(labels).count(0) + tuple(labels).count(1) + tuple(
 #         labels).count(2) + tuple(labels).count(3))
@@ -51,7 +62,10 @@ dataset = Data.TensorDataset(features, labels)
 num_test = int(rate_test * num_sample)
 num_train = num_sample - num_test
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [num_train, num_test], generator=None)
+
+# for tset
 # print("train_dataset: ", len(train_dataset), '\n' ''"test_dataset: ", len(test_dataset))
+
 train_iter = Data.DataLoader(
     dataset=train_dataset,  # torch TensorDataset format
     batch_size=batch_size,  # mini batch size
