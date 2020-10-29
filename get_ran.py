@@ -140,7 +140,7 @@ def get_nrcell_configuration(i: int, nrcellsize: int, mode_temp: int):
     # getStep(384000,396000),getStep(342000,356000),getStep(164800,169800),getStep(402000,405000) }
     dl1.sort()
     ul1.sort()
-    mode = mode_temp  # for test
+    # mode = mode_temp  # for test
     '''Here ! ! !'''
     if mode_temp != 0:
         rand_indexs = sample(range(6), randint(1, 6))
@@ -486,12 +486,13 @@ def Save_Perform(filename: str):
 #     save_node_cpn(p, i);
 
 
-def Save_Data(datacsv, f: int):
+def Save_Data(datacsv, f: bool):
     writer = csv.writer(datacsv, dialect="excel")
-    if f == 0:
+    if not f:
         writer.writerow(
-            ["BsChannelBwUL", "BsChannelBwDL", "ConnMean", "AttOutExecInterXn", "UpOctUL", "MaxTxPower",
-             "RetTilt", "RSRP", "RSRQ", "TransRatePeak", "Label"])
+            ["ULMeanNL", "ConnMean", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "ArfcnDL", "NbrPktDL",
+             "NbrPktLossDL", "UpOctUL", "UpOctDL", "BsChannelBwUL", "BsChannelBwDL", "MaxTxPower", "RetTilt",
+             "TransRatePeak", "RSRP", "RSRQ", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
@@ -501,10 +502,12 @@ def Save_Data(datacsv, f: int):
             temps.ans.append(antenna)
     for i in range(len(temps.nrs)):
         writer.writerow(
-            [temps.nrs[i].BsChannelBwUL, temps.nrs[i].BsChannelBwDL, temps.nrs[i].ConnMean,
-             temps.nrs[i].AttOutExecInterXn, temps.nrs[i].UpOctUL, temps.ans[i].MaxTxPower, temps.ans[i].RetTilt,
-             round(cpns[i].RSRP_mean), round(cpns[i].RSRQ_mean), round(cpns[i].TransRate_mean), modes[i]])
-        if i % 6 == 5:
-            writer.writerow('')
+            [temps.nrs[i].ULMeanNL, temps.nrs[i].ConnMean, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn,
+             temps.nrs[i].ArfcnUL, temps.nrs[i].ArfcnDL, temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL,
+             temps.nrs[i].UpOctUL, temps.nrs[i].UpOctDL, temps.nrs[i].BsChannelBwUL, temps.nrs[i].BsChannelBwDL,
+             temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].TransRate_mean), round(cpns[i].RSRP_mean),
+             round(cpns[i].RSRQ_mean), '2' + str(modes[i])])
+        # if i % 6 == 5:
+        #     writer.writerow('')
     modes.clear()
     writer.writerow('')

@@ -1,9 +1,9 @@
 from abc import ABC
-import torch
 import pandas as pd
 import torch.nn as nn
 import torch.utils.data as Data
 from torch.nn import init
+from main import num_core
 from tool import *
 
 torch.manual_seed(1)  # reproducible
@@ -14,7 +14,7 @@ B_INIT = -0.2
 num_RAN = int(1e4)
 num_cell = 18
 num_sample = (18 // num_cell) * num_RAN
-num_feature = 10
+num_feature = 17
 rate_test = 0.2
 batch_size = 1024
 lr = 0.01
@@ -22,8 +22,16 @@ num_epochs = 50
 device = 'cuda'
 
 # 数据处理
-feature = pd.read_csv('data.csv', header=0, usecols=range(num_feature))
-label = pd.read_csv('data.csv', header=0, usecols=[num_feature])
+feature_list, label_list = [], []
+for i in range(num_core):
+    feature_tmp = pd.read_csv('capacity_data' + str(i+1) + '.csv', header=0, usecols=range(num_feature))
+    label_tmp = pd.read_csv('capacity_data' + str(i+1) + '.csv', header=0, usecols=[num_feature])
+    feature_list.append(feature_tmp)
+    label_list.append(label_tmp)
+feature = pd.concat(feature_list)
+label = pd.concat(label_list)
+data = pd.concat([feature, label], axis=1)
+data.to_csv('capacity_data.csv')
 feature_normalize = np.zeros((num_sample * num_cell, num_feature))
 for i in range(num_feature):
     operation_feature = np.array(feature[feature.columns[i]])
@@ -35,15 +43,15 @@ for i in range(0, num_sample * num_cell, num_cell):
     labels_temp = label[i:i+num_cell]
     flag = 0
     for lab in labels_temp:
-        if lab != 0:
+        if lab != 20:
             labels[i // num_cell] = lab
             flag = 1
             break
     if flag == 0:
-        labels[i // num_cell] = 0
-# print("0:", tuple(labels).count(0), '\n' "1:", tuple(labels).count(1), '\n' "2:", tuple(labels).count(2), '\n' "3:",
-#       tuple(labels).count(3), '\n' "total:", tuple(labels).count(0) + tuple(labels).count(1) + tuple(labels).count(2)
-#       + tuple(labels).count(3))
+        labels[i // num_cell] = 20
+print("0:", tuple(labels).count(20), '\n' "1:", tuple(labels).count(21), '\n' "2:", tuple(labels).count(22), '\n' "3:",
+      tuple(labels).count(23), '\n' "total:", tuple(labels).count(20) + tuple(labels).count(21) + tuple(labels).count(22)
+      + tuple(labels).count(23))
 
 # 数据集处理
 dataset = Data.TensorDataset(features, labels)
@@ -117,19 +125,18 @@ class CNN(nn.Module, ABC):
 if __name__ == '__main__':
     net = CNN()
     # print(net)  # net architecture
-    # net = net.to(device)
-    # optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # optimize all cnn parameters
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # optimize all cnn parameters
     # train_ch5(net, train_iter, test_iter, optimizer, device, num_epochs)
     # torch.save(net, 'cnn.pkl')  # save entire net
     # torch.save(net.state_dict(), 'cnn_params.pkl')  # save only the parameters
 
-    net.load_state_dict(torch.load('./cnn_params.pkl'))
-    data_iter = Data.DataLoader(
-        dataset=dataset,  # torch TensorDataset format
-        batch_size=batch_size,  # mini batch size
-        shuffle=True,  # 要不要打乱数据 (打乱比较好)
-        num_workers=0,  # 多线程来读数据
-        pin_memory=True,
-        drop_last=True
-    )
-    softmax(data_iter, device, net, batch_size)
+    # net.load_state_dict(torch.load('./cnn_params.pkl'))
+    # data_iter = Data.DataLoader(
+    #     dataset=dataset,  # torch TensorDataset format
+    #     batch_size=batch_size,  # mini batch size
+    #     shuffle=True,  # 要不要打乱数据 (打乱比较好)
+    #     num_workers=0,  # 多线程来读数据
+    #     pin_memory=True,
+    #     drop_last=True
+    # )
+    # softmax(data_iter, device, net, batch_size)
