@@ -494,19 +494,25 @@ def Save_Data(datacsv, f: bool):
     writer = csv.writer(datacsv, dialect="excel")
     if not f:
         writer.writerow(
-            ["ULMeanNL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "NbrPktDL", "NbrPktLossDL", "RSRQ",
-             "Label"])
+            ["ULMeanNL", "ConnMean", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "ArfcnDL", "NbrPktDL",
+             "NbrPktLossDL", "UpOctUL", "UpOctDL", "BsChannelBwUL", "BsChannelBwDL", "MaxTxPower", "RetTilt",
+             "TransRatePeak", "RSRP", "RSRQ", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
             temps.nrs.append(nrcell)
+    for rru in ran.rrus:
+        for an in rru.antennas:
+            temps.ans.append(an)
     for i in range(len(temps.nrs)):
         writer.writerow(
-            [temps.nrs[i].ULMeanNL, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn,
-             temps.nrs[i].ArfcnUL,
-             temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL, round(cpns[i].RSRQ_mean), modes[i]])
-        if i % 6 == 5:
-            writer.writerow('')
+            [temps.nrs[i].ULMeanNL, temps.nrs[i].ConnMean, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn,
+             temps.nrs[i].ArfcnUL, temps.nrs[i].ArfcnDL, temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL,
+             temps.nrs[i].UpOctUL,  temps.nrs[i].UpOctDL, temps.nrs[i].BsChannelBwUL, temps.nrs[i].BsChannelBwDL,
+             temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].TransRate_mean), round(cpns[i].RSRP_mean),
+             round(cpns[i].RSRQ_mean), '1' + str(modes[i])])
+        # if i % 6 == 5:
+        #     writer.writerow('')
     modes.clear()
     cpns.clear()
     writer.writerow('')

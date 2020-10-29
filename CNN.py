@@ -16,7 +16,7 @@ B_INIT = -0.2
 num_RAN = int(1e4)
 num_cell = 6
 num_sample = (18 // num_cell) * num_RAN
-num_feature = 7
+num_feature = 17
 rate_test = 0.2
 batch_size = 256
 lr = 0.01
@@ -26,14 +26,14 @@ device = 'cuda'
 # 数据处理
 feature_list, label_list = [], []
 for i in range(num_core):
-    feature_tmp = pd.read_csv('data-' + str(i+1) + '.csv', header=0, usecols=range(num_feature))
-    label_tmp = pd.read_csv('data-' + str(i+1) + '.csv', header=0, usecols=[num_feature])
+    feature_tmp = pd.read_csv('interference_data' + str(i+1) + '.csv', header=0, usecols=range(num_feature))
+    label_tmp = pd.read_csv('interference_data' + str(i+1) + '.csv', header=0, usecols=[num_feature])
     feature_list.append(feature_tmp)
     label_list.append(label_tmp)
 feature = pd.concat(feature_list)
 label = pd.concat(label_list)
 data = pd.concat([feature, label], axis=1)
-data.to_csv('data.csv')
+data.to_csv('interference_data.csv')
 feature_normalize = np.zeros((num_sample * num_cell, num_feature))
 for i in range(num_feature):
     operation_feature = np.array(feature[feature.columns[i]])
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     cnn = CNN()
     # print(cnn)  # net architecture
     optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)  # optimize all cnn parameters
-    train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
+    # train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
     # torch.save(cnn, 'cnn.pkl')  # save entire net
     torch.save(cnn.state_dict(), 'cnn_params.pkl')  # save only the parameters
 

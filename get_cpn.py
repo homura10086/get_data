@@ -123,11 +123,11 @@ def get_cpe_performance(lamuda_interference: float, mode: int, k: int, MaxTxPowe
     for e, cpe in enumerate(cpns[k].cpes):
         cpe_size = len(cpns[k].cpes)
         # 传输速率/接收功率影响因子
-        lamuda_coverage = (getDistance(dus[k//3].Longitude, dus[k//3].Longitude, cpe.Longitude, cpe.Latitude) / 0.28) \
+        lamuda_coverage = (getDistance(dus[k//3].Longitude, dus[k//3].Latitude, cpe.Longitude, cpe.Latitude) / 0.28) \
             * (240.0 / MaxTxPower)
-        cpe.TransRatePeak = round(normal(500, 10) * (1 + 0.2 * (1 - lamuda_coverage)))
+        cpe.TransRatePeak = round(normal(500, 10) * (1 + 0.01 * (1 - lamuda_coverage)))
         cpe.TransRateMean = round(cpe.TransRatePeak * normal(0.5, 0.03))
-        cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.1 * (lamuda_coverage - 1)))
+        cpe.RSRP = round(normal(-95, 1.5) * (1 + 0.01 * (lamuda_coverage - 1)))
         if mode == 3:  # 阻塞干扰
             cpe.RSRQ = round(-18 * (1 - 3 * lamuda_interference))
         else:

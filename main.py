@@ -12,7 +12,7 @@ num_sample = int(1e4 // num_core)  # num_sample
 
 
 def main(batch: int, n: int):
-    with open("data-" + str(batch) + ".csv", "w", newline="") as datacsv:
+    with open("interference_data" + str(batch) + ".csv", "w", newline="") as datacsv:
         for i in range(n):
             # mode = int((i/n)*4)  # for test
             Get_Data(i)
