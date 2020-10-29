@@ -215,6 +215,7 @@ def get_nrcell_performance():
             y.UpOctDL = shannon(gnbs[i].nrcells[j].BsChannelBwDL,
                                 rrus[k // 3].antennas[k % 3].MaxTxPower) / 8E3 * normal(0.5, 0.03) * y.ConnMean
             y.AttOutExecInterXn = round(normal(15, 1) * y.ConnMean)
+            y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             if j == 0:  # 每个gnb内的第一个小区
                 lamuda1 = 5e-7 * abs(gnbs[i].nrcells[j].ArfcnDL - gnbs[i].nrcells[j + 1].ArfcnDL)
             elif j == 5:  # 每个gnb内的最后一个小区
@@ -245,7 +246,6 @@ def get_nrcell_performance():
                 y.SuccOutInterXn = round(y.AttOutExecInterXn * uniform(0.9, 1))
                 y.NbrPktLossDL = round(uniform(0.05, 0.1) * y.NbrPktDL)
             y.ULMaxNL = round(y.ULMeanNL / normal(1.2, 0.1))
-            y.NbrPktDL = round(y.UpOctDL / normal(1, 0.1))
             y.NbrPktUL = round(y.UpOctUL / normal(1, 0.1))
             y.CellMaxTxPower = rrus[k // 3].antennas[k % 3].MaxTxPower / normal(20, 3)
             y.CellMeanTxPower = y.CellMaxTxPower * normal(0.5, 0.03)
@@ -529,12 +529,13 @@ def Save_Perform(filename: str):
 #     save_node_cpn(p, i);
 
 
-def Save_Data(datacsv, f: int):
+def Save_Data(datacsv, f: bool):
     writer = csv.writer(datacsv, dialect="excel")
-    if f == 0:
+    if not f:
         writer.writerow(
-            ["UpOctUL", "UpOctDL", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnDL", "ArfcnUL", "ULMeanNL",
-             "NbrPktLossDL", "MaxTxPower", "RetTilt", "RSRP", "Label"])
+            ["ULMeanNL", "ConnMean", "AttOutExecInterXn", "SuccOutInterXn", "ArfcnUL", "ArfcnDL", "NbrPktDL",
+             "NbrPktLossDL", "UpOctUL", "UpOctDL", "BsChannelBwUL", "BsChannelBwDL", "MaxTxPower", "RetTilt",
+             "TransRatePeak", "RSRP", "RSRQ", "Label"])
     temps = Temp()
     for gnb in ran.gnbs:
         for nrcell in gnb.nrcells:
@@ -544,12 +545,13 @@ def Save_Data(datacsv, f: int):
             temps.ans.append(antenna)
     for i in range(len(temps.nrs)):
         writer.writerow(
-            [temps.nrs[i].UpOctUL, temps.nrs[i].UpOctDL, temps.nrs[i].AttOutExecInterXn,
-             temps.nrs[i].SuccOutInterXn, temps.nrs[i].ArfcnDL, temps.nrs[i].ArfcnUL, temps.nrs[i].ULMeanNL,
-             temps.nrs[i].NbrPktLossDL, temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].RSRP_mean),
-             modes[i]])
-        if i % 6 == 5:
-            writer.writerow('')
+            [temps.nrs[i].ULMeanNL, temps.nrs[i].ConnMean, temps.nrs[i].AttOutExecInterXn, temps.nrs[i].SuccOutInterXn,
+             temps.nrs[i].ArfcnUL, temps.nrs[i].ArfcnDL, temps.nrs[i].NbrPktDL, temps.nrs[i].NbrPktLossDL,
+             temps.nrs[i].UpOctUL, temps.nrs[i].UpOctDL, temps.nrs[i].BsChannelBwUL, temps.nrs[i].BsChannelBwDL,
+             temps.ans[i].MaxTxPower, temps.ans[i].RetTilt, round(cpns[i].TransRate_mean), round(cpns[i].RSRP_mean),
+             round(cpns[i].RSRQ_mean), '3' + str(modes[i])])
+        # if i % 6 == 5:
+        #     writer.writerow('')
     modes.clear()
-    # writer.writerow('')
+    writer.writerow('')
 

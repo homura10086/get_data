@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.utils.data as Data
 from torch.nn import init
 from tool import minmaxscaler, train_ch5
+from main import num_core
 
 torch.manual_seed(1)  # reproducible
 torch.cuda.manual_seed_all(1)  # 为所有GPU设置随机种子
@@ -15,7 +16,7 @@ B_INIT = -0.2
 num_RAN = int(1e4)
 num_cell = 6
 num_sample = (18 // num_cell) * num_RAN
-num_feature = 11
+num_feature = 17
 rate_test = 0.2
 batch_size = 256
 lr = 0.01
@@ -23,8 +24,16 @@ num_epochs = 50
 device = 'cuda'
 
 # 数据处理
-feature = pd.read_csv('data.csv', header=0, usecols=range(num_feature))
-label = pd.read_csv('data.csv', header=0, usecols=[num_feature])
+feature_list, label_list = [], []
+for i in range(num_core):
+    feature_tmp = pd.read_csv('coverage_data' + str(i+1) + '.csv', header=0, usecols=range(num_feature))
+    label_tmp = pd.read_csv('coverage_data' + str(i+1) + '.csv', header=0, usecols=[num_feature])
+    feature_list.append(feature_tmp)
+    label_list.append(label_tmp)
+feature = pd.concat(feature_list)
+label = pd.concat(label_list)
+data = pd.concat([feature, label], axis=1)
+data.to_csv('coverage_data.csv')
 feature_normalize = np.zeros((num_sample * num_cell, num_feature))
 for i in range(num_feature):
     operation_feature = np.array(feature[feature.columns[i]])
@@ -36,14 +45,14 @@ for i in range(0, num_sample * num_cell, num_cell):
     labels_temp = label[i:i+num_cell]
     flag = 0
     for lab in labels_temp:
-        if lab != 0:
+        if lab != 30:
             labels[i // num_cell] = lab
             flag = 1
             break
     if flag == 0:
-        labels[i // num_cell] = 0
-# print("0:", tuple(labels).count(0), '\n' "1:", tuple(labels).count(1), '\n' "2:", tuple(labels).count(2), '\n' "3:",
-#       tuple(labels).count(3), '\n' "4:", tuple(labels).count(4))
+        labels[i // num_cell] = 30
+print("0:", tuple(labels).count(30), '\n' "1:", tuple(labels).count(31), '\n' "2:", tuple(labels).count(32), '\n' "3:",
+      tuple(labels).count(33), '\n' "4:", tuple(labels).count(34))
 
 # 数据集处理
 dataset = Data.TensorDataset(features, labels)
@@ -118,6 +127,17 @@ if __name__ == '__main__':
     cnn = CNN()
     # print(cnn)  # net architecture
     optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)  # optimize all cnn parameters
-    train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
+    # train_ch5(cnn, train_iter, test_iter, optimizer, device, num_epochs)
     # torch.save(cnn, 'cnn.pkl')  # save entire net
     # torch.save(cnn.state_dict(), 'cnn_params.pkl')  # save only the parameters
+
+    # cnn.load_state_dict(torch.load('./cnn_params.pkl'))
+    # data_iter = Data.DataLoader(
+    #     dataset=dataset,  # torch TensorDataset format
+    #     batch_size=batch_size,  # mini batch size
+    #     shuffle=True,  # 要不要打乱数据 (打乱比较好)
+    #     num_workers=0,  # 多线程来读数据
+    #     pin_memory=True,
+    #     drop_last=True
+    # )
+    # softmax(data_iter, device, cnn, batch_size)
